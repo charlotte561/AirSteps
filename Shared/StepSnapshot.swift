@@ -37,6 +37,18 @@ struct StepSnapshot: Codable, Equatable {
         }
     }
 
+    /// This snapshot as it should look on the day of `now`: unchanged if it was
+    /// taken that day, otherwise back to zero steps as of that day's midnight.
+    /// Keeps yesterday's count from lingering after 00:00.
+    func rolledOver(to now: Date = .now) -> StepSnapshot {
+        let calendar = Calendar.current
+        guard !calendar.isDate(updatedAt, inSameDayAs: now) else { return self }
+        var fresh = self
+        fresh.steps = 0
+        fresh.updatedAt = calendar.startOfDay(for: now)
+        return fresh
+    }
+
     static let sample = StepSnapshot(steps: 5_432, goal: 8_000, updatedAt: .now,
                                      sourceName: "Google Health", status: .ok)
     static let empty  = StepSnapshot(steps: 0, goal: 8_000, updatedAt: .now,

@@ -36,9 +36,11 @@ final class SnapshotStore {
         set { defaults.set(newValue, forKey: sourceKey) }
     }
 
+    /// The last saved snapshot. One saved on an earlier day comes back with
+    /// zero steps, so yesterday's count is never shown as today's.
     func load() -> StepSnapshot? {
         guard let data = defaults.data(forKey: snapshotKey) else { return nil }
-        return try? JSONDecoder().decode(StepSnapshot.self, from: data)
+        return (try? JSONDecoder().decode(StepSnapshot.self, from: data))?.rolledOver()
     }
 
     func save(_ snapshot: StepSnapshot) {

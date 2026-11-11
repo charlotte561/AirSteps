@@ -25,9 +25,21 @@ struct StepProvider: TimelineProvider {
                 ?? .empty
             snap.goal = SnapshotStore.shared.goal
 
-            let entry = StepEntry(date: .now, snapshot: snap)
-            let next = Calendar.current.date(byAdding: .minute, value: 15, to: .now) ?? .now
-            completion(Timeline(entries: [entry], policy: .after(next)))
+            let now = Date.now
+            let calendar = Calendar.current
+            var entries = [StepEntry(date: now, snapshot: snap)]
+
+            // Queue a zeroed entry for 00:00 so the widget starts the new day
+            // on time even if the system delays the next reload (or the phone
+            // is locked overnight and Health can't be read).
+            if let midnight = calendar.nextDate(after: now,
+                                                matching: DateComponents(hour: 0, minute: 0, second: 0),
+                                                matchingPolicy: .nextTime) {
+                entries.append(StepEntry(date: midnight, snapshot: snap.rolledOver(to: midnight)))
+            }
+
+            let next = calendar.date(byAdding: .minute, value: 15, to: now) ?? now
+            completion(Timeline(entries: entries, policy: .after(next)))
         }
     }
 }
